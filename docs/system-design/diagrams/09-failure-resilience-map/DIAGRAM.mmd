@@ -1,19 +1,19 @@
 flowchart TD
-  req[Gateway receives request]
-  call[Call upstream adapter]
-  classify{Failure class}
+  reqNode[Gateway receives request]
+  upstreamCallNode[Call upstream adapter]
+  classifyNode{Failure class}
 
-  req --> call
-  call --> classify
+  reqNode --> upstreamCallNode
+  upstreamCallNode --> classifyNode
 
-  classify -->|network timeout| unavailable[Return 503 upstream_unavailable]
-  classify -->|upstream 4xx| passthrough4xx[Passthrough status body]
-  classify -->|upstream 5xx| passthrough5xx[Passthrough status body]
-  classify -->|malformed upstream payload| protocolError[Return 502 or 500 gateway protocol error]
+  classifyNode -->|network timeout| unavailableNode[Return 503 upstream_unavailable]
+  classifyNode -->|upstream 4xx| passthrough4xxNode[Passthrough status body]
+  classifyNode -->|upstream 5xx| passthrough5xxNode[Passthrough status body]
+  classifyNode -->|malformed upstream payload| protocolErrorNode[Return 502 or 500 gateway protocol error]
 
-  unavailable --> obs[Emit logs traces metrics with correlation_id]
-  passthrough4xx --> obs
-  passthrough5xx --> obs
-  protocolError --> obs
+  unavailableNode --> obsNode[Emit logs traces metrics with correlation_id]
+  passthrough4xxNode --> obsNode
+  passthrough5xxNode --> obsNode
+  protocolErrorNode --> obsNode
 
-  obs --> done[Response completed]
+  obsNode --> doneNode[Response completed]
