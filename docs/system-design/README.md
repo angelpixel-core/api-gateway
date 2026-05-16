@@ -28,15 +28,19 @@ Define the internal architecture of `apps/api-gateway` in depth while keeping in
 
 ## Internal Architecture Index
 
-1. `diagrams/01-system-context.mmd`
-2. `diagrams/02-container-modules.mmd`
-3. `diagrams/03-request-lifecycle-accounts.mmd`
-4. `diagrams/04-request-lifecycle-ledger.mmd`
-5. `diagrams/05-request-lifecycle-balances.mmd`
-6. `diagrams/06-auth-boundary-evolution.mmd`
-7. `diagrams/07-observability-flow.mmd`
-8. `diagrams/08-extensibility-integration-ports.mmd`
-9. `diagrams/09-failure-resilience-map.mmd`
+Each diagram has its own folder with:
+- `README.md` for system-design interview explanation
+- `DIAGRAM.mmd` for the canonical Mermaid source
+
+1. `diagrams/01-system-context/`
+2. `diagrams/02-container-modules/`
+3. `diagrams/03-request-lifecycle-accounts/`
+4. `diagrams/04-request-lifecycle-ledger/`
+5. `diagrams/05-request-lifecycle-balances/`
+6. `diagrams/06-auth-boundary-evolution/`
+7. `diagrams/07-observability-flow/`
+8. `diagrams/08-extensibility-integration-ports/`
+9. `diagrams/09-failure-resilience-map/`
 
 ## Extensibility and Integration Principles
 
