@@ -1,0 +1,29 @@
+flowchart TD
+  subgraph public[Public API contract]
+    accounts[/POST /api/v1/accounts/]
+    ledger[/POST /api/v1/ledger/entries/]
+    balances[/GET /api/v1/balances/]
+  end
+
+  subgraph gateway[Gateway integration ports]
+    accountPort[AccountOperationsPort]
+    ledgerPort[LedgerOperationsPort]
+    balancePort[BalanceQueryPort]
+  end
+
+  subgraph adapters[Adapter implementations]
+    railsAdapter[banking-admin HTTP adapter]
+    altAdapter[Alternative adapter\nREST/gRPC/event facade]
+  end
+
+  accounts --> accountPort
+  ledger --> ledgerPort
+  balances --> balancePort
+
+  accountPort --> railsAdapter
+  ledgerPort --> railsAdapter
+  balancePort --> railsAdapter
+
+  accountPort -. swappable .-> altAdapter
+  ledgerPort -. swappable .-> altAdapter
+  balancePort -. swappable .-> altAdapter

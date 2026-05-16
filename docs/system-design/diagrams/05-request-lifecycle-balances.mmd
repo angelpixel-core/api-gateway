@@ -1,0 +1,21 @@
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant G as API Gateway
+  participant U as Upstream Contract
+  participant B as banking-admin
+
+  C->>G: GET /api/v1/balances?account_id&asset_code
+  G->>G: auth boundary check
+  G->>G: resolve correlation id
+  G->>U: listBalances(filters, correlation_id)
+  U->>B: GET /banking_admin/api/v1/balances?...
+
+  alt success
+    B-->>U: 200 balances payload
+    U-->>G: 200 balances payload
+    G-->>C: 200 passthrough payload
+  else upstream failure
+    U-->>G: transport/protocol failure
+    G-->>C: 503 upstream_unavailable
+  end

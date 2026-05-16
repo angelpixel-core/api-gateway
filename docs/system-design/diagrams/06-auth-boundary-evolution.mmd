@@ -1,0 +1,17 @@
+flowchart TD
+  start([Incoming /api/v1 request]) --> mode{AUTH_BOUNDARY_MODE}
+
+  mode -->|stub| stub[Allow request\nAttach mode metadata]
+  mode -->|enforced| token{Token valid?}
+
+  token -->|yes| authorize[Authorize\nAttach identity context]
+  token -->|no| deny[Return 401/403\nStructured error]
+
+  stub --> corr[Resolve correlation id]
+  authorize --> corr
+  corr --> route[Dispatch to domain proxy module]
+  route --> done([Passthrough response])
+  deny --> end([Stop])
+
+  note1[Enforced mode remains integration-agnostic:\nany token provider implementing validation contract can be used]
+  mode -.-> note1

@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant G as API Gateway
+  participant U as Upstream Contract
+  participant B as banking-admin
+
+  C->>G: POST /api/v1/accounts + payload
+  G->>G: auth boundary check
+  G->>G: resolve correlation id
+  G->>U: createAccount(payload, correlation_id)
+  U->>B: POST /banking_admin/api/v1/accounts
+
+  alt success
+    B-->>U: 201 account payload
+    U-->>G: 201 account payload
+    G-->>C: 201 passthrough + X-Correlation-ID
+  else validation error
+    B-->>U: 422 error envelope
+    U-->>G: 422 error envelope
+    G-->>C: 422 passthrough + X-Correlation-ID
+  else upstream unavailable
+    U-->>G: transport failure
+    G-->>C: 503 upstream_unavailable
+  end
