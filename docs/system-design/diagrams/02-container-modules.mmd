@@ -1,0 +1,29 @@
+flowchart TD
+  subgraph app[api-gateway service]
+    boot[Bootstrap\nmain.ts]
+    appmod[AppModule]
+
+    subgraph auth[AuthBoundaryModule]
+      guard[Stub/Enforced guard]
+      corr[Correlation interceptor]
+    end
+
+    subgraph proxy[BankingProxyModule]
+      acc[Accounts controller]
+      led[Ledger entries controller]
+      bal[Balances controller]
+      client[Upstream HTTP client adapter]
+    end
+
+    shared[Shared response helpers]
+  end
+
+  boot --> appmod
+  appmod --> auth
+  appmod --> proxy
+  acc --> client
+  led --> client
+  bal --> client
+  acc --> shared
+  led --> shared
+  bal --> shared

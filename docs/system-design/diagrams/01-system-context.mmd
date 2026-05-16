@@ -1,0 +1,17 @@
+flowchart LR
+  client[Product clients\nweb/mobile/service consumers]
+  gateway[api-gateway\npublic contract /api/v1/*]
+  upstream[(Abstract upstream contract)]
+  banking[banking-admin adapter\ncurrent upstream implementation]
+  core[banking-core domain\nfinancial truth]
+  obs[(Observability backends)]
+
+  client --> gateway
+  gateway --> upstream
+  upstream --> banking
+  banking --> core
+  gateway --> obs
+  banking --> obs
+
+  classDef boundary fill:#eef7ff,stroke:#2b5cab;
+  class gateway,upstream,banking,core boundary;

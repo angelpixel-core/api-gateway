@@ -1,0 +1,28 @@
+sequenceDiagram
+  autonumber
+  participant C as Client
+  participant G as API Gateway
+  participant U as Upstream Contract
+  participant B as banking-admin
+
+  C->>G: POST /api/v1/ledger/entries
+  G->>G: auth boundary check
+  G->>G: resolve correlation id
+  G->>U: postLedgerEntries(payload, correlation_id)
+  U->>B: POST /banking_admin/api/v1/ledger_entries
+
+  alt success
+    B-->>U: 201 ledger response
+    U-->>G: 201 ledger response
+    G-->>C: 201 passthrough
+  else duplicate/idempotency conflict
+    B-->>U: 409 duplicate_reference
+    U-->>G: 409 duplicate_reference
+    G-->>C: 409 passthrough
+  else unbalanced/validation
+    B-->>U: 422 error envelope
+    U-->>G: 422 error envelope
+    G-->>C: 422 passthrough
+  end
+
+  Note over G,C: X-Correlation-ID returned in every response

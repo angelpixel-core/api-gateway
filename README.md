@@ -30,6 +30,21 @@ npm install
 npm run start:dev
 ```
 
+## Testing
+
+```bash
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:smoke
+```
+
+## System Design
+
+Detailed system design for this service is tracked in:
+
+- `apps/api-gateway/docs/system-design/README.md`
+
 ## Naming Convention
 
 Canonical naming for this service and modules is tracked in:

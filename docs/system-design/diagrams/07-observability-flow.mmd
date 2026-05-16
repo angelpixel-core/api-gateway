@@ -1,0 +1,26 @@
+flowchart LR
+  req[Incoming request]
+  gw[Gateway route + middleware]
+  up[Upstream adapter call]
+  resp[Client response]
+
+  logs[(Structured logs)]
+  traces[(Distributed traces)]
+  metrics[(Service metrics)]
+
+  req --> gw --> up --> resp
+
+  gw --> logs
+  up --> logs
+  gw --> traces
+  up --> traces
+  gw --> metrics
+
+  fields[Required fields\nservice\nroute\nstatus\ncorrelation_id\nupstream]
+  logs -.-> fields
+  traces -.-> fields
+
+  sinks[Telemetry backends\nPrometheus / Tempo / Loki-compatible]
+  logs --> sinks
+  traces --> sinks
+  metrics --> sinks
