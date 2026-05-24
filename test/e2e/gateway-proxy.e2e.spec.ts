@@ -51,7 +51,10 @@ describe("API Gateway T4 passthrough", () => {
 
     expect(response.body).toEqual({ id: "acc-1", correlation_id: "corr-account" });
     expect(response.headers["x-correlation-id"]).toBe("corr-account");
-    expect(postMock).toHaveBeenCalledWith("/banking_admin/api/v1/accounts", payload, "corr-account");
+    expect(postMock).toHaveBeenCalledWith("/banking_admin/api/v1/accounts", payload, "corr-account", {
+      referenceType: "account",
+      referenceId: "create"
+    });
   });
 
   it("proxies POST /api/v1/ledger/entries preserving upstream 4xx", async () => {
@@ -77,7 +80,68 @@ describe("API Gateway T4 passthrough", () => {
 
     expect(response.body).toEqual({ code: "duplicate_reference", correlation_id: "corr-ledger" });
     expect(response.headers["x-correlation-id"]).toBe("corr-ledger");
-    expect(postMock).toHaveBeenCalledWith("/banking_admin/api/v1/ledger_entries", payload, "corr-ledger");
+    expect(postMock).toHaveBeenCalledWith("/banking_admin/api/v1/ledger_entries", payload, "corr-ledger", {
+      referenceType: "transfer",
+      referenceId: "ref-1"
+    });
+  });
+
+  it("preserves idempotency semantics for duplicate ledger request at API boundary", async () => {
+    postMock
+      .mockResolvedValueOnce({
+        status: 201,
+        body: {
+          reference_type: "transfer",
+          reference_id: "dup-ref-1",
+          entry_count: 2,
+          correlation_id: "corr-dup-1"
+        },
+        headers: new Headers()
+      })
+      .mockResolvedValueOnce({
+        status: 409,
+        body: {
+          code: "duplicate_reference",
+          message: "reference already exists",
+          correlation_id: "corr-dup-1"
+        },
+        headers: new Headers()
+      });
+
+    const payload = {
+      ledger_entry: {
+        reference_type: "transfer",
+        reference_id: "dup-ref-1",
+        entries: []
+      }
+    };
+
+    await request(app.getHttpServer())
+      .post("/api/v1/ledger/entries")
+      .set("X-Correlation-ID", "corr-dup-1")
+      .send(payload)
+      .expect(201);
+
+    const duplicate = await request(app.getHttpServer())
+      .post("/api/v1/ledger/entries")
+      .set("X-Correlation-ID", "corr-dup-1")
+      .send(payload)
+      .expect(409);
+
+    expect(duplicate.body).toEqual({
+      code: "duplicate_reference",
+      message: "reference already exists",
+      correlation_id: "corr-dup-1"
+    });
+    expect(postMock).toHaveBeenCalledTimes(2);
+    expect(postMock).toHaveBeenNthCalledWith(1, "/banking_admin/api/v1/ledger_entries", payload, "corr-dup-1", {
+      referenceType: "transfer",
+      referenceId: "dup-ref-1"
+    });
+    expect(postMock).toHaveBeenNthCalledWith(2, "/banking_admin/api/v1/ledger_entries", payload, "corr-dup-1", {
+      referenceType: "transfer",
+      referenceId: "dup-ref-1"
+    });
   });
 
   it("proxies POST /api/v1/ledger/entries preserving upstream 422 envelope", async () => {
