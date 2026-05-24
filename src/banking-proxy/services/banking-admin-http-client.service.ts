@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable } from "@nestjs/common";
 
 import { logGatewayEvent } from "../../observability/gateway-logger";
+import { withGatewaySpan } from "../../observability/trace-span";
 
 type ProxyResult = {
   status: number;
@@ -42,43 +43,54 @@ export class BankingAdminHttpClient {
 
   private async request(path: string, init: RequestInit, correlationId: string, metadata: RequestMetadata): Promise<ProxyResult> {
     const startedAt = Date.now();
-    const response = await fetch(`${this.baseUrl}${path}`, init).catch((error: unknown) => {
-      logGatewayEvent({
-        event: "gateway.request.failed",
-        status: "failed",
-        correlation_id: correlationId,
-        reference_type: metadata.referenceType,
-        reference_id: metadata.referenceId,
-        duration_ms: Date.now() - startedAt,
-        error_code: "upstream_unavailable"
-      });
 
-      throw new HttpException(
-        {
-          code: "upstream_unavailable",
-          message: "banking-admin upstream is unavailable"
-        },
-        HttpStatus.SERVICE_UNAVAILABLE,
-        { cause: error as Error }
-      );
-    });
+    return withGatewaySpan(
+      {
+        correlationId: correlationId,
+        workflowStep: "gateway_proxy_request",
+        referenceType: metadata.referenceType,
+        referenceId: metadata.referenceId
+      },
+      async () => {
+        const response = await fetch(`${this.baseUrl}${path}`, init).catch((error: unknown) => {
+          logGatewayEvent({
+            event: "gateway.request.failed",
+            status: "failed",
+            correlation_id: correlationId,
+            reference_type: metadata.referenceType,
+            reference_id: metadata.referenceId,
+            duration_ms: Date.now() - startedAt,
+            error_code: "upstream_unavailable"
+          });
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const body = contentType.includes("application/json") ? await response.json() : await response.text();
+          throw new HttpException(
+            {
+              code: "upstream_unavailable",
+              message: "banking-admin upstream is unavailable"
+            },
+            HttpStatus.SERVICE_UNAVAILABLE,
+            { cause: error as Error }
+          );
+        });
 
-    logGatewayEvent({
-      event: "gateway.request.proxied",
-      status: "proxied",
-      correlation_id: correlationId,
-      reference_type: metadata.referenceType,
-      reference_id: metadata.referenceId,
-      duration_ms: Date.now() - startedAt
-    });
+        const contentType = response.headers.get("content-type") ?? "";
+        const body = contentType.includes("application/json") ? await response.json() : await response.text();
 
-    return {
-      status: response.status,
-      body,
-      headers: response.headers
-    };
+        logGatewayEvent({
+          event: "gateway.request.proxied",
+          status: "proxied",
+          correlation_id: correlationId,
+          reference_type: metadata.referenceType,
+          reference_id: metadata.referenceId,
+          duration_ms: Date.now() - startedAt
+        });
+
+        return {
+          status: response.status,
+          body,
+          headers: response.headers
+        };
+      }
+    );
   }
 }
