@@ -2,6 +2,8 @@ import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from "@nes
 import { randomUUID } from "node:crypto";
 import { Observable } from "rxjs";
 
+import { logGatewayEvent } from "../observability/gateway-logger";
+
 const DEFAULT_CORRELATION_HEADER = "x-correlation-id";
 
 @Injectable()
@@ -16,6 +18,11 @@ export class CorrelationIdInterceptor implements NestInterceptor {
 
     request.correlationId = correlationId;
     response.setHeader("X-Correlation-ID", correlationId);
+    logGatewayEvent({
+      event: "gateway.request.received",
+      status: "received",
+      correlation_id: correlationId
+    });
 
     return next.handle();
   }

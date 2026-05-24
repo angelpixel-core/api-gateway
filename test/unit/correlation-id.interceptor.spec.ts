@@ -3,6 +3,7 @@ import * as crypto from "node:crypto";
 import { of } from "rxjs";
 
 import { CorrelationIdInterceptor } from "../../src/auth-boundary/correlation-id.interceptor";
+import * as gatewayLogger from "../../src/observability/gateway-logger";
 
 describe("CorrelationIdInterceptor", () => {
   afterEach(() => {
@@ -18,10 +19,17 @@ describe("CorrelationIdInterceptor", () => {
     const setHeader = jest.fn();
     const next = { handle: jest.fn(() => of("ok")) };
 
+    const loggerSpy = jest.spyOn(gatewayLogger, "logGatewayEvent").mockImplementation(() => undefined);
+
     interceptor.intercept(mockContext(request, setHeader), next);
 
     expect(request.correlationId).toBe("corr-incoming");
     expect(setHeader).toHaveBeenCalledWith("X-Correlation-ID", "corr-incoming");
+    expect(loggerSpy).toHaveBeenCalledWith({
+      event: "gateway.request.received",
+      status: "received",
+      correlation_id: "corr-incoming"
+    });
     expect(next.handle).toHaveBeenCalledTimes(1);
   });
 
