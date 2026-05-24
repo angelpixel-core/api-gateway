@@ -13,7 +13,10 @@ export class AccountsController {
     @Req() request: { correlationId: string },
     @Res() response: { status: (code: number) => { send: (body: unknown) => void } }
   ): Promise<void> {
-    const upstream = await this.bankingAdminHttpClient.post("/banking_admin/api/v1/accounts", payload, request.correlationId);
+    const upstream = await this.bankingAdminHttpClient.post("/banking_admin/api/v1/accounts", payload, request.correlationId, {
+      referenceType: "account",
+      referenceId: "create"
+    });
     sendProxyResponse(response, upstream.status, upstream.body);
   }
 }

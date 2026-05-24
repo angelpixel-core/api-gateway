@@ -24,7 +24,10 @@ export class BalancesController {
       query.set("asset_code", assetCode);
     }
 
-    const upstream = await this.bankingAdminHttpClient.get("/banking_admin/api/v1/balances", query, request.correlationId);
+    const upstream = await this.bankingAdminHttpClient.get("/banking_admin/api/v1/balances", query, request.correlationId, {
+      referenceType: "balance_query",
+      referenceId: accountId ?? assetCode ?? "all"
+    });
     sendProxyResponse(response, upstream.status, upstream.body);
   }
 }

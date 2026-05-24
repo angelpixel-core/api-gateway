@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
 
 import { BankingAdminHttpClient } from "../../src/banking-proxy/services/banking-admin-http-client.service";
+import * as gatewayLogger from "../../src/observability/gateway-logger";
 
 describe("BankingAdminHttpClient", () => {
   const fetchMock = jest.fn();
@@ -9,6 +10,7 @@ describe("BankingAdminHttpClient", () => {
     fetchMock.mockReset();
     (global as unknown as { fetch: typeof fetch }).fetch = fetchMock as unknown as typeof fetch;
     process.env.BANKING_ADMIN_BASE_URL = "http://banking-admin.local";
+    jest.spyOn(gatewayLogger, "logGatewayEvent").mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -24,7 +26,10 @@ describe("BankingAdminHttpClient", () => {
     const client = new BankingAdminHttpClient();
     const payload = { account: { id: "a1" } };
 
-    const result = await client.post("/banking_admin/api/v1/accounts", payload, "corr-post");
+    const result = await client.post("/banking_admin/api/v1/accounts", payload, "corr-post", {
+      referenceType: "account",
+      referenceId: "create"
+    });
 
     expect(fetchMock).toHaveBeenCalledWith("http://banking-admin.local/banking_admin/api/v1/accounts", {
       method: "POST",
@@ -36,6 +41,15 @@ describe("BankingAdminHttpClient", () => {
     });
     expect(result.status).toBe(201);
     expect(result.body).toEqual({ ok: true });
+    expect(gatewayLogger.logGatewayEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "gateway.request.proxied",
+        status: "proxied",
+        correlation_id: "corr-post",
+        reference_type: "account",
+        reference_id: "create"
+      })
+    );
   });
 
   it("sends GET request with query and returns text payload", async () => {
@@ -74,5 +88,14 @@ describe("BankingAdminHttpClient", () => {
         message: "banking-admin upstream is unavailable"
       }
     } as Partial<HttpException>);
+
+    expect(gatewayLogger.logGatewayEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: "gateway.request.failed",
+        status: "failed",
+        correlation_id: "corr-fail",
+        error_code: "upstream_unavailable"
+      })
+    );
   });
 });

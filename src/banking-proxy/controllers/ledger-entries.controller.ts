@@ -9,11 +9,14 @@ export class LedgerEntriesController {
 
   @Post()
   async postLedgerEntries(
-    @Body() payload: unknown,
+    @Body() payload: { ledger_entry?: { reference_type?: string; reference_id?: string } },
     @Req() request: { correlationId: string },
     @Res() response: { status: (code: number) => { send: (body: unknown) => void } }
   ): Promise<void> {
-    const upstream = await this.bankingAdminHttpClient.post("/banking_admin/api/v1/ledger_entries", payload, request.correlationId);
+    const upstream = await this.bankingAdminHttpClient.post("/banking_admin/api/v1/ledger_entries", payload, request.correlationId, {
+      referenceType: payload.ledger_entry?.reference_type,
+      referenceId: payload.ledger_entry?.reference_id
+    });
     sendProxyResponse(response, upstream.status, upstream.body);
   }
 }
