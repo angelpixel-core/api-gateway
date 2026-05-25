@@ -26,7 +26,7 @@ describe("API Gateway T4 passthrough", () => {
       .compile();
 
     app = moduleRef.createNestApplication();
-    app.setGlobalPrefix("api/v1", { exclude: ["health"] });
+    app.setGlobalPrefix("api/v1", { exclude: ["health", "live", "ready"] });
     await app.init();
   });
 

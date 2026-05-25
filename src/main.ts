@@ -7,7 +7,7 @@ import { AppModule } from "./app.module";
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
-  app.setGlobalPrefix("api/v1", { exclude: ["health"] });
+  app.setGlobalPrefix("api/v1", { exclude: ["health", "live", "ready"] });
 
   const port = Number(process.env.API_GATEWAY_PORT ?? 3001);
   await app.listen(port);

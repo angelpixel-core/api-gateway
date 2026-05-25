@@ -1,9 +1,19 @@
 import { Controller, Get } from "@nestjs/common";
 
-@Controller("health")
+@Controller()
 export class HealthController {
-  @Get()
-  index(): { status: string; service: string } {
+  @Get("health")
+  health(): { status: string; service: string } {
+    return { status: "ok", service: "api-gateway" };
+  }
+
+  @Get("live")
+  live(): { status: string; service: string } {
+    return { status: "ok", service: "api-gateway" };
+  }
+
+  @Get("ready")
+  ready(): { status: string; service: string } {
     return { status: "ok", service: "api-gateway" };
   }
 }
